@@ -12,7 +12,7 @@ class BarangController extends Controller
      */
     public function index()
     {
-        $barang = DB::select('SELECT * FROM V_BARANG ORDER BY NO ASC');
+        $barang = DB::select('SELECT * FROM V_STOK_BARANG ORDER BY NO ASC');
 
         return view('barang.index', compact('barang'));
     }
@@ -45,13 +45,15 @@ class BarangController extends Controller
             'satuan.required'   => 'Satuan wajib dipilih.',
         ]);
 
-        // tambahBarang(p_jenis, p_nama, p_harga, p_idsatuan)
-        DB::statement('CALL tambahBarang(?, ?, ?, ?)', [
-            $validated['kategori'],
-            $validated['nama'],
-            $validated['harga'],
-            $validated['satuan'],
-        ]);
+        DB::select(
+            'INSERT INTO barang (jenis, nama, status, harga, idsatuan) VALUES (?, ?, 1, ?, ?)',
+            [
+                $validated['kategori'],
+                $validated['nama'],
+                $validated['harga'],
+                $validated['satuan'],
+            ]
+        );
 
         return redirect()->route('barang.index')
             ->with('success', 'Barang berhasil ditambahkan.');
@@ -107,20 +109,20 @@ class BarangController extends Controller
             'satuan.required'   => 'Satuan wajib dipilih.',
         ]);
 
-        // updateBarang(p_idbarang, p_jenis, p_nama, p_harga, p_idsatuan)
-        DB::statement('CALL updateBarang(?, ?, ?, ?, ?)', [
-            $id,
-            $validated['kategori'],
-            $validated['nama'],
-            $validated['harga'],
-            $validated['satuan'],
-        ]);
 
-        // statusBarang(p_idbarang, p_status)
-        DB::statement('CALL statusBarang(?, ?)', [$id, $validated['status']]);
-
-        return redirect()->route('barang.index')
-            ->with('success', 'Barang berhasil diperbarui.');
+        DB::select(
+            'UPDATE barang
+             SET jenis = ?, nama = ?, harga = ?, idsatuan = ?, status = ?
+             WHERE idbarang = ?',
+            [
+                $validated['kategori'],
+                $validated['nama'],
+                $validated['harga'],
+                $validated['satuan'],
+                $validated['status'],
+                $id,
+            ]
+        );
     }
 
     /**
@@ -134,7 +136,8 @@ class BarangController extends Controller
             abort(404);
         }
 
-        DB::statement('CALL statusBarang(?, ?)', [$id, 0]);
+        // "hapus" = nonaktifkan, baris tidak dihapus supaya riwayat transaksi aman
+        DB::select('UPDATE barang SET status = 0 WHERE idbarang = ?', [$id]);
 
         return redirect()->route('barang.index')
             ->with('success', 'Barang berhasil dinonaktifkan.');
