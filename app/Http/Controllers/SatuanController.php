@@ -37,7 +37,7 @@
             ]);
 
             // tambahBarang(p_jenis, p_nama, p_harga, p_idsatuan)
-            DB::statement('CALL tambahSatuan(?)', [
+            DB::select('INSERT INTO satuan (nama_satuan, status) VALUES (?, 1)', [
                 $validated['nama'],
             ]);
 
@@ -88,13 +88,14 @@
             ]);
 
             // updateBarang(p_idbarang, p_jenis, p_nama, p_harga, p_idsatuan)
-            DB::statement('CALL updateSatuan(?, ?)', [
-                $id,
+             DB::update(
+            'UPDATE satuan SET nama_satuan = ?, status = ? WHERE idsatuan = ?',
+            [
                 $validated['nama'],
-            ]);
-
-            // statusBarang(p_idbarang, p_status)
-            DB::statement('CALL statusSatuan(?, ?)', [$id, $validated['status']]);
+                $validated['status'],
+                $id,
+            ]
+            );
 
             return redirect()->route('satuan.index')
                 ->with('success', 'Satuan berhasil diperbarui.');
@@ -111,7 +112,7 @@
                 abort(404);
             }
 
-            DB::statement('CALL statusSatuan(?, ?)', [$id, 0]);
+            DB::select('UPDATE satuan SET status = 0 WHERE idsatuan = ?', [$id]);
 
             return redirect()->route('satuan.index')
                 ->with('success', 'Satuan berhasil dinonaktifkan.');
